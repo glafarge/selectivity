@@ -195,6 +195,46 @@
                         }
                     }
                 });
+
+
+				$('#cached-input').selectivity({
+                    ajax: {
+                        url: 'db.json',
+                        dataType: 'json',
+                        minimumInputLength: 3,
+                        quietMillis: 250,
+                        cached:true,
+                        processItem: function(item) {
+                            return {
+                                id: item.id,
+                                text: item.text,
+                            };
+                        },
+                        results: function(data, offset, term) {
+                        	var filtered = $.grep(data.items, function(el, index) {
+                        		return el.text.toLowerCase().indexOf(term.toLowerCase()) >= 0;
+                        	});
+
+                            return {
+                                results: filtered,
+                                more: false
+                            };
+                        }
+                    },
+                    placeholder: 'Search for a repository',
+                    templates: {
+                        resultItem: function(item) {
+                            return (
+                                '<div class="selectivity-result-item" data-item-id="' + item.id + '">' +
+                                    '<b>' + escape(item.text) + '</b><br>' +
+                                    escape(item.description) +
+                                '</div>'
+                            );
+                        }
+                    }
+                });
+
+
             });
         </script>
     </head>
@@ -397,6 +437,8 @@
                 </optgroup>
             </select>
         </form>
+        <h2>Select a static json</h2>
+        <p><span id="cached-input" class="selectivity-input"></span></p>
         <h2>Select a GitHub repository</h2>
         <p><span id="repository-input" class="selectivity-input"></span></p>
         <script>

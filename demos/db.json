@@ -1,0 +1,7 @@
+{
+	"items":[
+		{ "id": 1, "text": "Amsterdam" },
+		{ "id": 2, "text": "Antwerp" },
+		{ "id": 3, "text": "Athens" }
+	]
+}

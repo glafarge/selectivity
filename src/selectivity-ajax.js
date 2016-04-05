@@ -22,6 +22,8 @@ Selectivity.OptionListeners.unshift(function(selectivity, options) {
         var quietMillis = ajax.quietMillis || 0;
         var resultsCb = ajax.results || function(data) { return { results: data, more: false }; };
         var transport = ajax.transport || $.ajax;
+        var cached = ajax.cached || false;
+        var cache = {};
 
         if (quietMillis) {
             transport = debounce(transport, quietMillis);
@@ -43,28 +45,48 @@ Selectivity.OptionListeners.unshift(function(selectivity, options) {
                 var success = ajax.success;
                 var error = ajax.error;
 
-                transport($.extend({}, ajax, {
-                    url: url,
-                    success: function(data, textStatus, jqXHR) {
-                        if (success) {
-                            success(data, textStatus, jqXHR);
-                        }
+                if(cached && cache[url]) {
+                	console.log('read ' + url + ' from our cache');
 
-                        var results = resultsCb(data, offset);
-                        results.results = results.results.map(processItem);
-                        queryOptions.callback(results);
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        if (error) {
-                            error(jqXHR, textStatus, errorThrown);
-                        }
+                	var results = resultsCb(cache[url]['data'], offset, term);
+                    results.results = results.results.map(processItem);
+                    queryOptions.callback(results);
+                }
+                else {
+                	console.log('DO Ajax request');
 
-                        queryOptions.error(
-                            formatError(term, jqXHR, textStatus, errorThrown),
-                            { escape: false }
-                        );
-                    }
-                }));
+	                transport($.extend({}, ajax, {
+	                    url: url,
+	                    success: function(data, textStatus, jqXHR) {
+	                        if (success) {
+	                            success(data, textStatus, jqXHR);
+	                        }
+	                        if(cached && !cache[url]) {
+	                        	cache[url] = {
+	                        		data: data,
+	                        		textStatus: textStatus,
+	                        		jqXHR: jqXHR
+	                        	};
+
+	                        	console.log('caching ' + url);
+	                        }
+
+	                        var results = resultsCb(data, offset, term);
+	                        results.results = results.results.map(processItem);
+	                        queryOptions.callback(results);
+	                    },
+	                    error: function(jqXHR, textStatus, errorThrown) {
+	                        if (error) {
+	                            error(jqXHR, textStatus, errorThrown);
+	                        }
+
+	                        queryOptions.error(
+	                            formatError(term, jqXHR, textStatus, errorThrown),
+	                            { escape: false }
+	                        );
+	                    }
+	                }));
+				}
             }
         };
     }
